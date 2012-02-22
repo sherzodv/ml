@@ -24,6 +24,10 @@ enum ml_lex_token_type
 	, MLTOKEN_INTEGER		= 1
 };
 
+#define BUFF_SIZE 10000
+
+char *p_buff;
+
 struct ml_lex_t
 {
 	const uint8_t* start;	/* data stream start */
@@ -144,11 +148,55 @@ enum ml_error ml_next_token(struct ml_lex_t* ctxt, int* token)
 	return 0;
 }
 
+int load_file(char *p, char *fname)
+{
+	FILE *fp;
+	int i=0;
+	if ((fp=fopen(fname,"rb"))==NULL)
+		return 0;
+	i=0;
+	do
+	{
+		if(i>BUFF_SIZE)
+		{
+			if((p=(char*)realloc(p,BUFF_SIZE))==NULL)
+			{
+				printf("No memory!\n");
+				exit(1);
+			}
+			i=0;
+		}
+		*p=getc(fp);
+		p++; i++;
+	} while(!feof(fp));
+	if(*(p-2)==0x1a) *(p-2)='\0';
+	else *(p-1)='\0';
+	fclose(fp);
+	return 1;
+}
+
 int main(int argc, char** argv)
 {
 	struct ml_lex_t context;
+	
+	char* input;
 
-	char* input = "342 234234 2342 456";
+	if(argc!=2)
+	{
+		printf("Error:\n\tSyntax: testmld [file]\n");
+		exit(1);
+	}
+
+	if ((p_buff=(char*)malloc(BUFF_SIZE))==NULL)
+	{
+		printf("No memory!\n");
+		exit(1);
+	}
+	
+	if(!load_file(p_buff,argv[1])) exit(1);
+	
+	input=p_buff;
+
 	char* input_end = input + strlen(input);
 
 	if (ml_init(&context, input, input_end, 0, 0) != ML_OK)
@@ -159,6 +207,7 @@ int main(int argc, char** argv)
 	while (ml_next_token(&context, &token) != ML_OK)
 		printf("Next token: %d\n", token);
 
+	free(p_buff);
 	return 0;
 }
 
