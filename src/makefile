@@ -14,10 +14,10 @@ CSHAREDLIBFLAGS = -c -fPIC
 CSTATICLIBFLAGS = -c
 INCLUDE_DIR = .
 
-HEADERS = 
-SOURCES = main.c 
+HEADERS = mstring.h ustream.h lexer.h
+SOURCES = main.c mstring.c ustream.c lexer.c
 SRC = $(HEADERS) $(SOURCES)
-OBJSRC = main.c ext/utf8proc/utf8proc.c
+OBJSRC = main.c ext/utf8proc/utf8proc.c mstring.c ustream.c lexer.c
 
 debug: $(TARGET_DEBUG)
 release: $(TARGET_RELEASE)
