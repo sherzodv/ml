@@ -1,72 +1,82 @@
 
-#include <stdlib.h>
+#include "ml.h"
+
 #include <stdio.h>
-#include "lexer.h"
+#include <string.h>
+#include <time.h>
+#include <errno.h>
 
-#define BUFF_SIZE 10000
+uint8_t* ml_read_file(const char* fileName, uint8_t** data);
 
-char *p_buff;
-
-int load_file(char *p, char *fname)
+int main(int argc, char** argv)
 {
-	FILE *fp;
-	int i=0;
-	if ((fp=fopen(fname,"rb"))==NULL)
-		return 0;
-	i=0;
-	do
-	{
-		if(i>BUFF_SIZE)
-		{
-			if((p=(char*)realloc(p,BUFF_SIZE))==NULL)
-			{
-				printf("No memory!\n");
-				exit(1);
-			}
-			i=0;
+	uint8_t* data = NULL;
+	uint8_t* dataend = NULL;
+
+	if (argc > 1) {
+		dataend = ml_read_file(argv[1], &data);
+		if (dataend == NULL) {
+			printf("Can't open file for reading: %s\n", argv[1]);
+			exit(1);
 		}
-		*p=getc(fp);
-		p++; i++;
-	} while(!feof(fp));
-	if(*(p-2)==0x1a) *(p-2)='\0';
-	else *(p-1)='\0';
-	fclose(fp);
-	return 1;
+	} else {
+		dataend = ml_read_file(NULL, &data);
+		if (dataend == NULL) {
+			printf("Can't read from standard input.\n");
+			exit(1);
+		}
+	}
+
+	ml_normalize_encoding(data, dataend, &data, &dataend);
+	
+	struct ml_dom* dom;
+	int level = 0;
+
+#ifdef DEBUG
+	if (ml_parse_sgml(data, dataend, &dom, stdout) == ML_OK)
+#else
+	if (ml_parse_sgml(data, dataend, &dom) == ML_OK)
+#endif
+		mld_print_text(stdout, dom);
+
+	ml_dom_free(dom);
+
+	return 0;
 }
 
-int main(int argc, char **argv)
+uint8_t* ml_read_file(const char* fileName, uint8_t** data)
 {
-	if(argc!=2)
-	{
-		printf("Error:\n\tSyntax: testmld [file]\n");
-		exit(1);
+	FILE *f = NULL;
+
+	if (fileName == NULL)
+		f = stdin;
+
+	if (!(f = fopen(fileName, "r"))) {
+		*data = NULL;
+		return NULL;
 	}
 
-	if ((p_buff=(char*)malloc(BUFF_SIZE))==NULL)
-	{
-		printf("No memory!\n");
-		exit(1);
-	}
+	size_t delta = 100000;
+	size_t size = delta;
+	size_t rcount = 0;
 	
-	if(!load_file(p_buff,argv[1])) exit(1);
+	*data = malloc(size * sizeof(uint8_t));
 
-	struct sstring input;
+	uint8_t* curr = *data;
+	size_t dsize = 0;
 
-	input.str = p_buff;
-	input.size = strlen(input.str);
-
-	struct lexer *l = new_slexer(&input);
-
-	if (!l)
-		return 1;
-
-	while (l->next(l) == OK) {
-		/* do some action here */
+	while (rcount = fread(curr, sizeof(uint8_t), delta, f))
+	{
+		dsize += rcount;
+		if (rcount < delta || feof(f))
+			break;
+		*data = realloc(*data, size + delta);
+		curr = *data + size - 1;
+		size += delta;
 	}
 
-	delete_slexer(l);
+	fclose(f);
 
-	free(p_buff);
-	return 0;
+	return *data + dsize + 1;
 }
 

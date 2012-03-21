@@ -1,6 +1,6 @@
 
 BIN_DIR = ../bin
-TARGET = testml
+TARGET = ml
 TARGET_RELEASE = $(BIN_DIR)/$(TARGET)
 TARGET_DEBUG = $(BIN_DIR)/$(TARGET)d
 TARGET_WARNING = dummy
@@ -14,10 +14,10 @@ CSHAREDLIBFLAGS = -c -fPIC
 CSTATICLIBFLAGS = -c
 INCLUDE_DIR = .
 
-HEADERS = mstring.h ustream.h lexer.h
-SOURCES = main.c mstring.c ustream.c lexer.c
+HEADERS = mllex.h mlparser.h mldom.h mlstack.h ml.h
+SOURCES = mllex.c mlparser.c mldom.c mllextbl.c ml.c main.c
 SRC = $(HEADERS) $(SOURCES)
-OBJSRC = main.c ext/utf8proc/utf8proc.c mstring.c ustream.c lexer.c
+OBJSRC = main.c mldom.c mllex.c mlparser.c ml.c thirdparty/utf8proc.c
 
 debug: $(TARGET_DEBUG)
 release: $(TARGET_RELEASE)
