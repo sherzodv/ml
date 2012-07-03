@@ -5,6 +5,8 @@
 
 #define BUFF_SIZE 10000
 
+//I'm here
+
 char *p_buff;
 
 int load_file(char *p, char *fname)
